@@ -375,10 +375,52 @@ function rand(max) {
         cellSize - offsetRight
       );
       if (coord.x === maze.endCoord().x && coord.y === maze.endCoord().y) {
-        onComplete(moves);
-        player.unbindKeyDown();
+        player.unbindKeyDown(); // Stop player movement
+        fetchBananaAPI(); // Call the API
       }
     }
+
+
+// Function to validate user's answer
+function fetchBananaAPI() {
+  let apiWindow = window.open("https://marcconrad.com/uob/banana/index.php", "_blank");
+
+  setTimeout(() => {
+      let userAnswer = prompt("Enter the answer from the opened page:");
+      if (userAnswer) {
+          alert("You entered: " + userAnswer);
+          restartGame(); // Restart the game after the answer
+      } else {
+          alert("You must provide an answer to continue!");
+      }
+  }, 3000);
+}
+
+function validateAnswer(answer) {
+  let apiUrl = `https://marcconrad.com/uob/banana/index.php?ans=${encodeURIComponent(answer)}`;
+
+  fetch(apiUrl)
+      .then(response => response.text())
+      .then(result => {
+          if (result.includes("correct")) {
+              alert("Correct! Restarting the game...");
+              restartGame();
+          } else {
+              alert("Wrong answer! Try again.");
+              fetchBananaAPI();
+          }
+      })
+      .catch(error => {
+          console.error("Error validating answer:", error);
+          alert("Error checking the answer. Try again.");
+          fetchBananaAPI();
+      });
+}
+
+// Function to restart the game after solving the challenge
+function restartGame() {
+  makeMaze(); // Reset the maze
+}
   
     function removeSprite(coord) {
       var offsetLeft = cellSize / 50;
