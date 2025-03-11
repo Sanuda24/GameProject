@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maze</title>
+  <link rel="stylesheet" href="./style.css">
+ 
+</head>
+<body>
+
+  <div id="page">
+
+    <div id="Message-Container">
+      <div id="message">
+        <h1>Congratulations!</h1>
+        <p>You are done.</p>
+        <p id="moves"></p>
+        <input id="okBtn" type="button" onclick="toggleVisablity('Message-Container')" value="Cool!" />
+      </div>
+    </div>
+
+    <br>
+    <div id="menu">
+      <div class="custom-select">
+        <select id="diffSelect">
+                  <option value="10">Easy</option>
+                  <option value="15">Medium</option>
+                  <option value="25">Hard</option>
+                  <option value="38">Extreme</option>                                      
+              </select>
+      </div>
+      <input id="startMazeBtn" type="button" onclick="makeMaze()" value="Start" />
+      <input id="logout-button" type="button" onclick="makeMaze()" value="LogOut" />
+
+    </div>
+
+    <div id="view">
+      <div id="mazeContainer">
+        <canvas id="mazeCanvas" class="border" height="1100" width="1100"></canvas>
+      </div>
+    </div>
+
+    <p id="instructions">Use the arrow keys and help the monkey get to the Banana!</p>
+    <p id="player-name" style="text-align: center; font-size: 20px; margin-top: 20px;"></p>
+    
+  </div>
+
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.18/jquery.touchSwipe.min.js"></script>
+  
+  <script src="./mazeScript.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const nickname = sessionStorage.getItem("nickname") || "Guest"; // Default to Guest
+
+        // Display nickname (Guest or Logged-in user)
+        document.getElementById("player-name").textContent = 
+            `Playing as ${nickname}!`;
+
+        // Logout button functionality
+        document.getElementById("logout-button").addEventListener("click", () => {
+            sessionStorage.removeItem("nickname");
+            window.location.href = "login.html";
+        });
+    });
+</script>
+  
+</body>
+</html>
