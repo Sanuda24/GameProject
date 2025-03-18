@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ✅ Handle Login Click (Fixed)
+    //Handle Login Click
     document.getElementById("login-button").addEventListener("click", async () => {
         const nickname = document.getElementById("login-nickname").value;
         const password = document.getElementById("login-password").value;
@@ -36,10 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (response.ok) {
                 alert("Login successful!");
-                sessionStorage.setItem("nickname", nickname); // ✅ Save user session
-                window.location.href = "Maze.html"; // ✅ Redirect to maze game (Ensure correct filename)
+                sessionStorage.setItem("nickname", nickname); 
+                window.location.href = "Maze.html"; 
             } else {
-                alert(data.message); // Show error message if login fails
+                alert(data.message); 
             }
         } catch (error) {
             console.error("Login error:", error);
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✅ Handle Signup
+    // Handle Signup
     document.getElementById("signup-button").addEventListener("click", async () => {
         const nickname = document.getElementById("signup-nickname").value;
         const password = document.getElementById("signup-password").value;
@@ -72,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ✅ Handle Guest Mode
+    // Handle Guest Mode
     document.getElementById("guest-button").addEventListener("click", () => {
         sessionStorage.setItem("nickname", "Guest");
-        window.location.href = "Maze.html"; // ✅ Ensure "Maze.html" matches your actual file name
+        window.location.href = "Maze.html"; 
     });
 });
