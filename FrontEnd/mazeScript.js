@@ -1,3 +1,6 @@
+let startTime = null;
+let timerInterval = null;
+
 function rand(max) {
     return Math.floor(Math.random() * max);
   }
@@ -396,56 +399,48 @@ function restartGame() {
     }
   
     function check(e) {
+      if (!startTime) {
+          startTimer(); // Start the timer when the first move is made
+      }
+  
       var cell = map[cellCoords.x][cellCoords.y];
       moves++;
-      switch (e.keyCode) {
-        case 65:
-        case 37: // west
-          if (cell.w == true) {
-            removeSprite(cellCoords);
-            cellCoords = {
-              x: cellCoords.x - 1,
-              y: cellCoords.y
-            };
-            drawSprite(cellCoords);
-          }
-          break;
-        case 87:
-        case 38: // north
-          if (cell.n == true) {
-            removeSprite(cellCoords);
-            cellCoords = {
-              x: cellCoords.x,
-              y: cellCoords.y - 1
-            };
-            drawSprite(cellCoords);
-          }
-          break;
-        case 68:
-        case 39: // east
-          if (cell.e == true) {
-            removeSprite(cellCoords);
-            cellCoords = {
-              x: cellCoords.x + 1,
-              y: cellCoords.y
-            };
-            drawSprite(cellCoords);
-          }
-          break;
-        case 83:
-        case 40: // south
-          if (cell.s == true) {
-            removeSprite(cellCoords);
-            cellCoords = {
-              x: cellCoords.x,
-              y: cellCoords.y + 1
-            };
-            drawSprite(cellCoords);
-          }
-          break;
-      }
-    }
   
+      switch (e.keyCode) {
+          case 65:
+          case 37: // west
+              if (cell.w == true) {
+                  removeSprite(cellCoords);
+                  cellCoords = { x: cellCoords.x - 1, y: cellCoords.y };
+                  drawSprite(cellCoords);
+              }
+              break;
+          case 87:
+          case 38: // north
+              if (cell.n == true) {
+                  removeSprite(cellCoords);
+                  cellCoords = { x: cellCoords.x, y: cellCoords.y - 1 };
+                  drawSprite(cellCoords);
+              }
+              break;
+          case 68:
+          case 39: // east
+              if (cell.e == true) {
+                  removeSprite(cellCoords);
+                  cellCoords = { x: cellCoords.x + 1, y: cellCoords.y };
+                  drawSprite(cellCoords);
+              }
+              break;
+          case 83:
+          case 40: // south
+              if (cell.s == true) {
+                  removeSprite(cellCoords);
+                  cellCoords = { x: cellCoords.x, y: cellCoords.y + 1 };
+                  drawSprite(cellCoords);
+              }
+              break;
+      }
+  }
     this.bindKeyDown = function() {
       window.addEventListener("keydown", check, false);
   
@@ -647,7 +642,6 @@ function validateAnswer(userAnswer, correctAnswer, modal) {
       return;
   }
 
-  // ✅ Convert both to numbers for correct comparison
   const correctNumber = Number(correctAnswer);
   const userNumber = Number(userAnswer);
 
@@ -657,14 +651,53 @@ function validateAnswer(userAnswer, correctAnswer, modal) {
   }
 
   if (userNumber === correctNumber) {
-      alert("✅ Correct answer! You may continue.");
+      clearInterval(timerInterval); // Stop the timer
+      let totalTime = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById("timer-display").textContent = `Final Time: ${totalTime}s`;
+
+      alert(`✅ Correct answer! You finished in ${totalTime} seconds!`);
+
+      const nickname = sessionStorage.getItem("nickname") || "Guest";
+      const difficulty = document.getElementById("diffSelect").value;
+
+      fetch("http://localhost:3000/save-score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nickname, time: totalTime, difficulty })
+      }).then(() => {
+          window.location.href = "leaderboard.html"; // Redirect to leaderboard
+      }).catch(error => console.error("Error saving score:", error));
+
       modal.style.display = "none"; // Close modal
-      // Add logic to unlock the game here
   } else {
       alert("❌ Wrong answer! Try again.");
   }
 }
 
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+      let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById("timer-display").textContent = `Time: ${elapsedTime}s`;
+  }, 1000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const nickname = sessionStorage.getItem("nickname") || "Guest"; 
+
+  document.getElementById("player-name").textContent = 
+      `Playing as ${nickname}!`;
+
+  document.getElementById("logout-button").addEventListener("click", () => {
+      sessionStorage.removeItem("nickname");
+      window.location.href = "login.html";
+  });
+
+  document.getElementById("leaderboard-button").addEventListener("click", () => {
+      window.location.href = "leaderboard.html";
+  });
+});
 
 
 
