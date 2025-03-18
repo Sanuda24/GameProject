@@ -28,6 +28,14 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
+const scoreSchema = new mongoose.Schema({
+    nickname: { type: String, required: true, unique: true },
+    time: { type: Number, required: true },
+    difficulty: { type: String, required: true }
+});
+
+const Score = mongoose.model("Score", scoreSchema);
+
 app.get("/proxy-banana", async (req, res) => {
     try {
         const response = await axios.get("http://marcconrad.com/uob/banana/api.php?out=json");
@@ -82,6 +90,41 @@ app.post("/login", async (req, res) => {
 app.get("/session", (req, res) => {
     
     res.json({ nickname: req.query.nickname || "Guest" });
+});
+
+app.post("/save-score", async (req, res) => {
+    try {
+        const { nickname, time, difficulty } = req.body;
+
+        if (!nickname || !time || !difficulty) {
+            return res.status(400).json({ error: "Missing required fields." });
+        }
+
+        const existingScore = await Score.findOne({ nickname });
+
+        if (!existingScore || time < existingScore.time) {
+            await Score.findOneAndUpdate(
+                { nickname },
+                { time, difficulty },
+                { upsert: true, new: true }
+            );
+        }
+
+        res.json({ message: "Score saved successfully!" });
+    } catch (error) {
+        console.error("Error saving score:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+app.get("/leaderboard", async (req, res) => {
+    try {
+        const leaderboard = await Score.find().sort({ time: 1 });
+        res.json(leaderboard);
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 
 // Start Server
