@@ -2,20 +2,25 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const axios = require("axios");
+
 
 const app = express();
 
-// Middleware
-app.use(cors()); // Allow requests from frontend
+
+app.use(cors({
+    origin: "http://127.0.0.1:5500"
+}));
+
 app.use(bodyParser.json());
 
-// Connect to MongoDB
+
 mongoose.connect("mongodb://localhost:27017/GameDB")
 
 .then(() => console.log("✅ Connected to MongoDB"))
 .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-// Define User Schema
+//Schema
 const userSchema = new mongoose.Schema({
     nickname: { type: String, unique: true, required: true },
     password: { type: String, required: true, minlength: 6 },
@@ -23,7 +28,17 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-// Signup Route
+app.get("/proxy-banana", async (req, res) => {
+    try {
+        const response = await axios.get("http://marcconrad.com/uob/banana/api.php?out=json");
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching Banana API:", error);
+        res.status(500).json({ error: "Failed to fetch Banana API" });
+    }
+});
+
+// Signup 
 app.post("/signup", async (req, res) => {
     try {
         const { nickname, password } = req.body;
@@ -32,7 +47,7 @@ app.post("/signup", async (req, res) => {
             return res.status(400).json({ error: "Password must be at least 6 characters long." });
         }
 
-        // Check if nickname is already taken
+    
         const existingUser = await User.findOne({ nickname });
         if (existingUser) {
             return res.status(400).json({ error: "Nickname is already taken." });
@@ -47,7 +62,7 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-// Login Route
+// Login 
 app.post("/login", async (req, res) => {
     try {
         const { nickname, password } = req.body;
@@ -63,9 +78,9 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Check Session (for Maze Page)
+// Check Session
 app.get("/session", (req, res) => {
-    // Simulating session check (you can improve this with JWT or Express sessions)
+    
     res.json({ nickname: req.query.nickname || "Guest" });
 });
 

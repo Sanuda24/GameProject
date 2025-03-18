@@ -375,48 +375,10 @@ function rand(max) {
         cellSize - offsetRight
       );
       if (coord.x === maze.endCoord().x && coord.y === maze.endCoord().y) {
-        player.unbindKeyDown(); // Stop player movement
+        player.unbindKeyDown(); 
         fetchBananaAPI(); // Call the API
       }
     }
-
-
-// Function to validate user's answer
-function fetchBananaAPI() {
-  let apiWindow = window.open("https://marcconrad.com/uob/banana/index.php", "_blank");
-
-  setTimeout(() => {
-      let userAnswer = prompt("Enter the answer from the opened page:");
-      if (userAnswer) {
-          alert("You entered: " + userAnswer);
-          restartGame(); // Restart the game after the answer
-      } else {
-          alert("You must provide an answer to continue!");
-      }
-  }, 3000);
-}
-
-function validateAnswer(answer) {
-  let apiUrl = `https://marcconrad.com/uob/banana/index.php?ans=${encodeURIComponent(answer)}`;
-
-  fetch(apiUrl)
-      .then(response => response.text())
-      .then(result => {
-          if (result.includes("correct")) {
-              alert("Correct! Restarting the game...");
-              restartGame();
-          } else {
-              alert("Wrong answer! Try again.");
-              fetchBananaAPI();
-          }
-      })
-      .catch(error => {
-          console.error("Error validating answer:", error);
-          alert("Error checking the answer. Try again.");
-          fetchBananaAPI();
-      });
-}
-
 // Function to restart the game after solving the challenge
 function restartGame() {
   makeMaze(); // Reset the maze
@@ -625,6 +587,84 @@ function restartGame() {
       document.getElementById("mazeContainer").style.opacity = "100";
     }
   }
+
+  function fetchBananaAPI() {
+    fetch("http://localhost:3000/proxy-banana")
+        .then(response => response.json())
+        .then(data => {
+            let questionImage = data.question;
+            let correctAnswer = data.solution;
+
+            // Create modal
+            let modal = document.createElement("div");
+            modal.id = "bananaModal";
+            modal.style.position = "fixed";
+            modal.style.top = "50%";
+            modal.style.left = "50%";
+            modal.style.transform = "translate(-50%, -50%)";
+            modal.style.padding = "20px";
+            modal.style.background = "white";
+            modal.style.border = "2px solid black";
+            modal.style.zIndex = "1000";
+            modal.style.textAlign = "center";
+
+            let img = document.createElement("img");
+            img.src = questionImage;
+            img.style.maxWidth = "100%";
+
+            let inputField = document.createElement("input");
+            inputField.type = "text";
+            inputField.placeholder = "Enter answer here...";
+            inputField.style.padding = "10px";
+            inputField.style.marginTop = "10px";
+
+            let submitButton = document.createElement("button");
+            submitButton.innerText = "Submit";
+            submitButton.style.padding = "10px";
+            submitButton.style.marginTop = "10px";
+            submitButton.style.cursor = "pointer";
+
+            submitButton.onclick = () => {
+                let userAnswer = inputField.value.trim();
+                if (userAnswer === "") {
+                    alert("Please enter an answer.");
+                } else {
+                    validateAnswer(userAnswer, correctAnswer, modal);
+                }
+            };
+
+            modal.appendChild(img);
+            modal.appendChild(inputField);
+            modal.appendChild(submitButton);
+            document.body.appendChild(modal);
+        })
+        .catch(error => console.error("Error fetching Banana API:", error));
+}
+
+function validateAnswer(userAnswer, correctAnswer, modal) {
+  if (correctAnswer === undefined || correctAnswer === null) {
+      alert("Error: No answer received from API.");
+      return;
+  }
+
+  // ✅ Convert both to numbers for correct comparison
+  const correctNumber = Number(correctAnswer);
+  const userNumber = Number(userAnswer);
+
+  if (isNaN(userNumber)) {
+      alert("❌ Please enter a valid number.");
+      return;
+  }
+
+  if (userNumber === correctNumber) {
+      alert("✅ Correct answer! You may continue.");
+      modal.style.display = "none"; // Close modal
+      // Add logic to unlock the game here
+  } else {
+      alert("❌ Wrong answer! Try again.");
+  }
+}
+
 
 
 
