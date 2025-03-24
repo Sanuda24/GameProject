@@ -18,8 +18,9 @@
     <div id="menu">
       <div class="custom-select">
         <select id="diffSelect">
-                  <option value="10">Easy</option>
-                  <option value="15">Medium</option>                                     
+                  <option value="8">Easy</option>
+                  <option value="10">Medium</option> 
+                  <option value="12">Hard</option>                                      
               </select>
       </div>
       <input id="startMazeBtn" type="button" onclick="makeMaze()" value="Start" />
@@ -44,20 +45,7 @@
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.18/jquery.touchSwipe.min.js"></script>
   
   <script src="./mazeScript.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const nickname = sessionStorage.getItem("nickname") || "Guest"; 
 
-        
-        document.getElementById("player-name").textContent = 
-            `Playing as ${nickname}!`;
-
-        document.getElementById("logout-button").addEventListener("click", () => {
-            sessionStorage.removeItem("nickname");
-            window.location.href = "login.html";
-        });
-    });
-</script>
   
 </body>
 </html>

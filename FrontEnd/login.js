@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    //Handle Login Click
+    // 🔹 Handle Login
     document.getElementById("login-button").addEventListener("click", async () => {
         const nickname = document.getElementById("login-nickname").value;
         const password = document.getElementById("login-password").value;
@@ -33,13 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
-            
             if (response.ok) {
+                localStorage.setItem("token", data.token); // Store JWT
                 alert("Login successful!");
-                sessionStorage.setItem("nickname", nickname); 
-                window.location.href = "Maze.html"; 
+                window.location.href = "Maze.html";
             } else {
-                alert(data.message); 
+                alert(data.error);
             }
         } catch (error) {
             console.error("Login error:", error);
@@ -47,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Handle Signup
+    // 🔹 Handle Signup
     document.getElementById("signup-button").addEventListener("click", async () => {
         const nickname = document.getElementById("signup-nickname").value;
         const password = document.getElementById("signup-password").value;
@@ -60,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const response = await fetch("http://localhost:3000/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nickname, password }),
+            body: JSON.stringify({ nickname, password })
         });
 
         const data = await response.json();
@@ -68,13 +67,13 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Signup successful! Please log in.");
             loginToggle.click();
         } else {
-            alert(data.message);
+            alert(data.error);
         }
     });
 
-    // Handle Guest Mode
-    document.getElementById("guest-button").addEventListener("click", () => {
-        sessionStorage.setItem("nickname", "Guest");
+    // 🔹 Handle Guest Mode
+    document.getElementById("guest-button").addEventListener("click", async () => {
+        await fetch("http://localhost:3000/logout", { method: "POST", credentials: "include" });
         window.location.href = "Maze.html"; 
     });
 });

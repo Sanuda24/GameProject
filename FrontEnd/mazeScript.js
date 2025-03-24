@@ -582,6 +582,30 @@ function restartGame() {
       document.getElementById("mazeContainer").style.opacity = "100";
     }
   }
+  async function getNickname() {
+    const token = localStorage.getItem("token"); // Get JWT token
+
+    if (!token) {
+        console.warn("⚠ No token found, setting user as Guest.");
+        return "Guest";
+    }
+
+    try {
+        const response = await fetch("http://localhost:3000/session", {
+            headers: { "Authorization": token }
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch session");
+        }
+
+        const data = await response.json();
+        return data.nickname || "Guest";
+    } catch (error) {
+        console.error("Error fetching session:", error);
+        return "Guest";
+    }
+}
 
   function fetchBananaAPI() {
     fetch("http://localhost:3000/proxy-banana")
@@ -637,7 +661,7 @@ function restartGame() {
 }
 
 function validateAnswer(userAnswer, correctAnswer, modal) {
-  if (correctAnswer === undefined || correctAnswer === null) {
+  if (!correctAnswer) {
       alert("Error: No answer received from API.");
       return;
   }
@@ -657,20 +681,42 @@ function validateAnswer(userAnswer, correctAnswer, modal) {
 
       alert(`✅ Correct answer! You finished in ${totalTime} seconds!`);
 
-      const nickname = sessionStorage.getItem("nickname") || "Guest";
-      const difficulty = document.getElementById("diffSelect").value;
-
-      fetch("http://localhost:3000/save-score", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nickname, time: totalTime, difficulty })
-      }).then(() => {
-          window.location.href = "leaderboard.html"; // Redirect to leaderboard
-      }).catch(error => console.error("Error saving score:", error));
-
+      saveScore(totalTime);
       modal.style.display = "none"; // Close modal
   } else {
       alert("❌ Wrong answer! Try again.");
+  }
+}
+
+// 🔹 Save Score to Leaderboard
+async function saveScore(time) {
+  const token = localStorage.getItem("token");
+  const nickname = await getNickname();
+  const difficulty = document.getElementById("diffSelect").value;
+
+  if (!token) {
+      console.warn("⚠ No token found, skipping score save.");
+      return;
+  }
+
+  try {
+      const response = await fetch("http://localhost:3000/save-score", {
+          method: "POST",
+          headers: { 
+              "Content-Type": "application/json",
+              "Authorization": token // Attach JWT token
+          },
+          body: JSON.stringify({ nickname, time, difficulty })
+      });
+
+      if (!response.ok) {
+          throw new Error(`Failed to save score: ${response.statusText}`);
+      }
+
+      console.log("✅ Score saved successfully!");
+      window.location.href = "leaderboard.html"; // Redirect after saving
+  } catch (error) {
+      console.error("Error saving score:", error);
   }
 }
 
@@ -683,21 +729,27 @@ function startTimer() {
   }, 1000);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const nickname = sessionStorage.getItem("nickname") || "Guest"; 
+document.addEventListener("DOMContentLoaded", async () => {
+  const nickname = await getNickname();
 
   document.getElementById("player-name").textContent = 
       `Playing as ${nickname}!`;
 
-  document.getElementById("logout-button").addEventListener("click", () => {
-      sessionStorage.removeItem("nickname");
+    });
+
+
+  document.getElementById("logout-button").addEventListener("click", async () => {
+      await fetch("http://localhost:3000/logout", { 
+          method: "POST", 
+          credentials: "include" 
+      });
       window.location.href = "login.html";
   });
 
   document.getElementById("leaderboard-button").addEventListener("click", () => {
       window.location.href = "leaderboard.html";
   });
-});
+
 
 
 

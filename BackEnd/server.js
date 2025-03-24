@@ -2,109 +2,112 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const axios = require("axios");
 
 
 const app = express();
-
+const SECRET_KEY = "your_secret_key"; // Change this to a strong secret
 
 app.use(cors({
-    origin: "http://127.0.0.1:5500"
+    origin: "http://127.0.0.1:5500", // Adjust for your frontend
+    credentials: true
 }));
-
 app.use(bodyParser.json());
 
-
-mongoose.connect("mongodb://localhost:27017/GameDB")
-
-.then(() => console.log("✅ Connected to MongoDB"))
+// 🔹 Connect to MongoDB
+mongoose.connect("mongodb+srv://Sanuda:12345@cluster0.wfw25.mongodb.net/GameDB", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("✅ Connected to MongoDB"))
 .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-//Schema
+// 🔹 User Schema
 const userSchema = new mongoose.Schema({
     nickname: { type: String, unique: true, required: true },
-    password: { type: String, required: true, minlength: 6 },
+    password: { type: String, required: true, minlength: 6 }
 });
-
 const User = mongoose.model("User", userSchema);
 
+// 🔹 Score Schema
 const scoreSchema = new mongoose.Schema({
-    nickname: { type: String, required: true, unique: true },
+    nickname: { type: String, required: true },
     time: { type: Number, required: true },
     difficulty: { type: String, required: true }
 });
-
 const Score = mongoose.model("Score", scoreSchema);
 
-app.get("/proxy-banana", async (req, res) => {
-    try {
-        const response = await axios.get("http://marcconrad.com/uob/banana/api.php?out=json");
-        res.json(response.data);
-    } catch (error) {
-        console.error("Error fetching Banana API:", error);
-        res.status(500).json({ error: "Failed to fetch Banana API" });
-    }
-});
-
-// Signup 
+// 🔹 Signup Route
 app.post("/signup", async (req, res) => {
     try {
         const { nickname, password } = req.body;
+        if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters long." });
 
-        if (password.length < 6) {
-            return res.status(400).json({ error: "Password must be at least 6 characters long." });
-        }
-
-    
         const existingUser = await User.findOne({ nickname });
-        if (existingUser) {
-            return res.status(400).json({ error: "Nickname is already taken." });
-        }
+        if (existingUser) return res.status(400).json({ error: "Nickname is already taken." });
 
-        const newUser = new User({ nickname, password });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ nickname, password: hashedPassword });
         await newUser.save();
 
-        res.json({ message: "Signup successful!", nickname });
+        res.json({ message: "Signup successful!" });
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
-// Login 
+// 🔹 Login Route (JWT Authentication)
 app.post("/login", async (req, res) => {
     try {
         const { nickname, password } = req.body;
-
         const user = await User.findOne({ nickname });
-        if (!user || user.password !== password) {
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(400).json({ error: "Invalid nickname or password." });
         }
 
-        res.json({ message: "Login successful!", nickname });
+        const token = jwt.sign({ nickname }, SECRET_KEY, { expiresIn: "24h" });
+        res.json({ message: "Login successful!", token });
     } catch (error) {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
 
-// Check Session
-app.get("/session", (req, res) => {
-    
-    res.json({ nickname: req.query.nickname || "Guest" });
+// 🔹 Middleware to Verify Token
+function verifyToken(req, res, next) {
+    const token = req.headers["authorization"];
+    if (!token) return res.status(401).json({ error: "Access denied" });
+
+    jwt.verify(token, SECRET_KEY, (err, decoded) => {
+        if (err) return res.status(403).json({ error: "Invalid token" });
+        req.user = decoded;
+        next();
+    });
+}
+
+// 🔹 Get User Info (Protected Route)
+app.get("/session", verifyToken, (req, res) => {
+    res.json({ nickname: req.user.nickname });
 });
 
-app.post("/save-score", async (req, res) => {
+// 🔹 Save Score (Only if user is logged in)
+app.post("/save-score", verifyToken, async (req, res) => {
     try {
-        const { nickname, time, difficulty } = req.body;
+        const { time, difficulty } = req.body;
+        const nickname = req.user.nickname; // Get user from token
 
-        if (!nickname || !time || !difficulty) {
+        if (!time || !difficulty) {
             return res.status(400).json({ error: "Missing required fields." });
         }
 
-        const existingScore = await Score.findOne({ nickname });
+        // Check if a score exists for the user
+        const existingScore = await Score.findOne({ nickname, difficulty });
 
         if (!existingScore || time < existingScore.time) {
+            // Save only if it's the first score or a better (lower) time
             await Score.findOneAndUpdate(
-                { nickname },
+                { nickname, difficulty },
                 { time, difficulty },
                 { upsert: true, new: true }
             );
@@ -117,6 +120,7 @@ app.post("/save-score", async (req, res) => {
     }
 });
 
+// 🔹 Get Leaderboard
 app.get("/leaderboard", async (req, res) => {
     try {
         const leaderboard = await Score.find().sort({ time: 1 });
@@ -127,7 +131,18 @@ app.get("/leaderboard", async (req, res) => {
     }
 });
 
-// Start Server
+app.get("/proxy-banana", async (req, res) => {
+    try {
+        const response = await axios.get("http://marcconrad.com/uob/banana/api.php?out=json");
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error fetching Banana API:", error);
+        res.status(500).json({ error: "Failed to fetch Banana API" });
+    }
+});
+
+
+// 🔹 Start Server
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
