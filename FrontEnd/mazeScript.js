@@ -738,11 +738,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
 
-  document.getElementById("logout-button").addEventListener("click", async () => {
-      await fetch("http://localhost:3000/logout", { 
-          method: "POST", 
-          credentials: "include" 
-      });
+    document.getElementById("logout-button").addEventListener("click", () => {
+      localStorage.removeItem("token");
       window.location.href = "login.html";
   });
 

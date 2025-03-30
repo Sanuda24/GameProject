@@ -8,7 +8,7 @@ const axios = require("axios");
 
 
 const app = express();
-const SECRET_KEY = "your_secret_key"; // Change this to a strong secret
+const SECRET_KEY = "12345"; // Change this to a strong secret
 
 app.use(cors({
     origin: "http://127.0.0.1:5500", // Adjust for your frontend
@@ -34,9 +34,11 @@ const User = mongoose.model("User", userSchema);
 const scoreSchema = new mongoose.Schema({
     nickname: { type: String, required: true },
     time: { type: Number, required: true },
-    difficulty: { type: String, required: true }
+    difficulty: { type: Number, required: true }
 });
+scoreSchema.index({ nickname: 1, difficulty: 1 }, { unique: true });
 const Score = mongoose.model("Score", scoreSchema);
+module.exports = Score;
 
 // 🔹 Signup Route
 app.post("/signup", async (req, res) => {
@@ -101,21 +103,24 @@ app.post("/save-score", verifyToken, async (req, res) => {
             return res.status(400).json({ error: "Missing required fields." });
         }
 
-        // Check if a score exists for the user
-        const existingScore = await Score.findOne({ nickname, difficulty });
+        // Ensure difficulty is stored as a number (MongoDB stores easy=10, medium=15, etc.)
+        const difficultyNumber = parseInt(difficulty);
+
+        // Check if a score exists for this user at this difficulty
+        const existingScore = await Score.findOne({ nickname, difficulty: difficultyNumber });
 
         if (!existingScore || time < existingScore.time) {
             // Save only if it's the first score or a better (lower) time
             await Score.findOneAndUpdate(
-                { nickname, difficulty },
-                { time, difficulty },
-                { upsert: true, new: true }
+                { nickname, difficulty: difficultyNumber }, // Find existing record for this difficulty
+                { $set: { time } }, // Update only the time
+                { upsert: true, new: true, setDefaultsOnInsert: true }
             );
         }
 
         res.json({ message: "Score saved successfully!" });
     } catch (error) {
-        console.error("Error saving score:", error);
+        console.error("❌ Error saving score:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
@@ -123,7 +128,14 @@ app.post("/save-score", verifyToken, async (req, res) => {
 // 🔹 Get Leaderboard
 app.get("/leaderboard", async (req, res) => {
     try {
-        const leaderboard = await Score.find().sort({ time: 1 });
+        const { difficulty } = req.query;
+        let query = {};
+        
+        if (difficulty && difficulty !== "all") {
+            query.difficulty = parseInt(difficulty);
+        }
+
+        const leaderboard = await Score.find(query).sort({ time: 1 });
         res.json(leaderboard);
     } catch (error) {
         console.error("Error fetching leaderboard:", error);
