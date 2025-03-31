@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🔹 Handle Login
+    //Login
     document.getElementById("login-button").addEventListener("click", async () => {
         const nickname = document.getElementById("login-nickname").value;
         const password = document.getElementById("login-password").value;
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
             if (response.ok) {
-                localStorage.setItem("token", data.token); // Store JWT
+                localStorage.setItem("token", data.token);
                 alert("Login successful!");
                 window.location.href = "Maze.html";
             } else {
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 🔹 Handle Signup
+    // Signup
     document.getElementById("signup-button").addEventListener("click", async () => {
         const nickname = document.getElementById("signup-nickname").value;
         const password = document.getElementById("signup-password").value;
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 🔹 Handle Guest Mode
+    // Guest Mode
     document.getElementById("guest-button").addEventListener("click", async () => {
         await fetch("http://localhost:3000/logout", { method: "POST", credentials: "include" });
         window.location.href = "Maze.html"; 

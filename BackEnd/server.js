@@ -5,32 +5,39 @@ const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
+const path = require("path");
 
 
 const app = express();
-const SECRET_KEY = "12345"; // Change this to a strong secret
+const SECRET_KEY = "12345";
 
 app.use(cors({
-    origin: "http://127.0.0.1:5500", // Adjust for your frontend
+    origin: "http://127.0.0.1:5500",
     credentials: true
 }));
 app.use(bodyParser.json());
 
-// 🔹 Connect to MongoDB
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/login.html"));
+});
+
+//Connect to MongoDB
 mongoose.connect("mongodb+srv://Sanuda:12345@cluster0.wfw25.mongodb.net/GameDB", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log("✅ Connected to MongoDB"))
 .catch(err => console.error("❌ MongoDB Connection Error:", err));
 
-// 🔹 User Schema
+//User Schema
 const userSchema = new mongoose.Schema({
     nickname: { type: String, unique: true, required: true },
     password: { type: String, required: true, minlength: 6 }
 });
 const User = mongoose.model("User", userSchema);
 
-// 🔹 Score Schema
+//Score Schema
 const scoreSchema = new mongoose.Schema({
     nickname: { type: String, required: true },
     time: { type: Number, required: true },
@@ -40,7 +47,7 @@ scoreSchema.index({ nickname: 1, difficulty: 1 }, { unique: true });
 const Score = mongoose.model("Score", scoreSchema);
 module.exports = Score;
 
-// 🔹 Signup Route
+// Signup Route
 app.post("/signup", async (req, res) => {
     try {
         const { nickname, password } = req.body;
@@ -59,7 +66,7 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-// 🔹 Login Route (JWT Authentication)
+// Login Route (JWT Authentication)
 app.post("/login", async (req, res) => {
     try {
         const { nickname, password } = req.body;
@@ -76,7 +83,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// 🔹 Middleware to Verify Token
+//Verify Token
 function verifyToken(req, res, next) {
     const token = req.headers["authorization"];
     if (!token) return res.status(401).json({ error: "Access denied" });
@@ -88,32 +95,30 @@ function verifyToken(req, res, next) {
     });
 }
 
-// 🔹 Get User Info (Protected Route)
+//Get User Info
 app.get("/session", verifyToken, (req, res) => {
     res.json({ nickname: req.user.nickname });
 });
 
-// 🔹 Save Score (Only if user is logged in)
+// Save Score (Only if user is logged in)
 app.post("/save-score", verifyToken, async (req, res) => {
     try {
         const { time, difficulty } = req.body;
-        const nickname = req.user.nickname; // Get user from token
+        const nickname = req.user.nickname;
 
         if (!time || !difficulty) {
             return res.status(400).json({ error: "Missing required fields." });
         }
 
-        // Ensure difficulty is stored as a number (MongoDB stores easy=10, medium=15, etc.)
         const difficultyNumber = parseInt(difficulty);
 
-        // Check if a score exists for this user at this difficulty
         const existingScore = await Score.findOne({ nickname, difficulty: difficultyNumber });
 
         if (!existingScore || time < existingScore.time) {
-            // Save only if it's the first score or a better (lower) time
+           
             await Score.findOneAndUpdate(
-                { nickname, difficulty: difficultyNumber }, // Find existing record for this difficulty
-                { $set: { time } }, // Update only the time
+                { nickname, difficulty: difficultyNumber }, 
+                { $set: { time } },
                 { upsert: true, new: true, setDefaultsOnInsert: true }
             );
         }
@@ -125,7 +130,7 @@ app.post("/save-score", verifyToken, async (req, res) => {
     }
 });
 
-// 🔹 Get Leaderboard
+// Get Leaderboard
 app.get("/leaderboard", async (req, res) => {
     try {
         const { difficulty } = req.query;
@@ -154,7 +159,7 @@ app.get("/proxy-banana", async (req, res) => {
 });
 
 
-// 🔹 Start Server
+//Start Server
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
