@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateLeaderboard(data) {
         const tableBody = document.getElementById("leaderboard-table");
-        tableBody.innerHTML = ""; // Clear existing data
+        tableBody.innerHTML = "";
 
         data.forEach((entry, index) => {
             let difficultyLabel;
@@ -47,21 +47,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 🔹 Fetch leaderboard initially
+    // Fetch leaderboard initially
     fetchLeaderboard();
 
-    // 🔹 Dropdown filter event
+    // Dropdown filter event
     document.getElementById("difficulty-filter").addEventListener("change", async (event) => {
         const selectedDifficulty = event.target.value;
         fetchLeaderboard(selectedDifficulty);
     });
 
-    // 🔹 Restart game button
+    //Restart game button
     document.getElementById("restart-button").addEventListener("click", () => {
         window.location.href = "Maze.html";
     });
 
-    // 🔹 Logout button
+    // Logout button
     document.getElementById("logout-button").addEventListener("click", () => {
         localStorage.removeItem("token");
         window.location.href = "login.html";

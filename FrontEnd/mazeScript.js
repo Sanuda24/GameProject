@@ -379,10 +379,10 @@ function rand(max) {
       );
       if (coord.x === maze.endCoord().x && coord.y === maze.endCoord().y) {
         player.unbindKeyDown(); 
-        fetchBananaAPI(); // Call the API
+        fetchBananaAPI();
       }
     }
-// Function to restart the game after solving the challenge
+// Function to restart the game
 function restartGame() {
   makeMaze(); // Reset the maze
 }
@@ -583,7 +583,7 @@ function restartGame() {
     }
   }
   async function getNickname() {
-    const token = localStorage.getItem("token"); // Get JWT token
+    const token = localStorage.getItem("token");
 
     if (!token) {
         console.warn("⚠ No token found, setting user as Guest.");
@@ -617,31 +617,19 @@ function restartGame() {
             // Create modal
             let modal = document.createElement("div");
             modal.id = "bananaModal";
-            modal.style.position = "fixed";
-            modal.style.top = "50%";
-            modal.style.left = "50%";
-            modal.style.transform = "translate(-50%, -50%)";
-            modal.style.padding = "20px";
-            modal.style.background = "white";
-            modal.style.border = "2px solid black";
-            modal.style.zIndex = "1000";
-            modal.style.textAlign = "center";
 
             let img = document.createElement("img");
             img.src = questionImage;
-            img.style.maxWidth = "100%";
+            img.classList.add("modal-image");
 
             let inputField = document.createElement("input");
             inputField.type = "text";
             inputField.placeholder = "Enter answer here...";
-            inputField.style.padding = "10px";
-            inputField.style.marginTop = "10px";
+            inputField.classList.add("modal-input");
 
             let submitButton = document.createElement("button");
             submitButton.innerText = "Submit";
-            submitButton.style.padding = "10px";
-            submitButton.style.marginTop = "10px";
-            submitButton.style.cursor = "pointer";
+            submitButton.classList.add("modal-button");
 
             submitButton.onclick = () => {
                 let userAnswer = inputField.value.trim();
@@ -675,20 +663,20 @@ function validateAnswer(userAnswer, correctAnswer, modal) {
   }
 
   if (userNumber === correctNumber) {
-      clearInterval(timerInterval); // Stop the timer
+      clearInterval(timerInterval);
       let totalTime = Math.floor((Date.now() - startTime) / 1000);
       document.getElementById("timer-display").textContent = `Final Time: ${totalTime}s`;
 
       alert(`✅ Correct answer! You finished in ${totalTime} seconds!`);
 
       saveScore(totalTime);
-      modal.style.display = "none"; // Close modal
+      modal.style.display = "none";
   } else {
       alert("❌ Wrong answer! Try again.");
   }
 }
 
-// 🔹 Save Score to Leaderboard
+//Save Score to Leaderboard
 async function saveScore(time) {
   const token = localStorage.getItem("token");
   const nickname = await getNickname();
@@ -704,7 +692,7 @@ async function saveScore(time) {
           method: "POST",
           headers: { 
               "Content-Type": "application/json",
-              "Authorization": token // Attach JWT token
+              "Authorization": token 
           },
           body: JSON.stringify({ nickname, time, difficulty })
       });
